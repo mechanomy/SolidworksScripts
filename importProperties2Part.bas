@@ -19,7 +19,7 @@ Sub main()
     
     Set swApp = Application.SldWorks
     Set swModel = swApp.ActiveDoc
-    Debug.Print "File = " + swModel.GetPathName 'Debug.Print s appear in the VBA Immediate window
+    Debug.Print "File = " + swModel.GetPathName 'Debug.Prints appear in the VBA Immediate window
     
     Dim modelType As Integer
     Dim pathModel As String
@@ -103,13 +103,12 @@ Sub main()
                     'Debug.Print "strType[" & strType & "] = vPropType[" & vPropType; "]"
                     
                     If Len(strConfig) = 0 Or strConfig = "Default" Then 'This first branch adds Custom [File] Properties
-                        ret = swModel.AddCustomInfo2(strName, vPropType, value) 'https://www.reddit.com/r/SolidWorks/comments/nq47ki/custom_properties_solidworks_macro/
-                        
-                        If ret = 0 Then
-                            Debug.Print "Added [" & strName & "] = [" & value & "] to Custom File Properties"
-                        Else
-                            Debug.Print "Failed adding [" & strName & "] = [" & value & "] to Custom File Properties"
-                        End If
+                        '241009 rewriting to use CustomPropertyManager:
+                        Dim swModelDocExt As ModelDocExtension
+                        Set swModelDocExt = swModel.Extension
+                        Dim swCustProp As CustomPropertyManager ' list of members: https://help.solidworks.com/2021/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.ICustomPropertyManager_members.html?_gl=1*q8mdhx*_up*MQ..*_ga*MTc5MTI0NzYuMTcyODUyNDU4OA..*_ga_XQJPQWHZHH*MTcyODUyNDU4OC4xLjEuMTcyODUyNTQxNy4wLjAuMA..
+                        Set swCustProp = swModelDocExt.CustomPropertyManager("") 'Get the custom property data https://help.solidworks.com/2021/english/api/sldworksapi/Get_Custom_Properties_of_Referenced_Part_Example_VB.htm?_gl=1*1p8akwv*_up*MQ..*_ga*MTc5MTI0NzYuMTcyODUyNDU4OA..*_ga_XQJPQWHZHH*MTcyODUyNDU4OC4xLjEuMTcyODUyNDg4NC4wLjAuMA..
+                        bool = swCustProp.Add3(strName, vPropType, "" & value, swCustomPropertyDeleteAndAdd)
                         
                     Else 'This branch adds configuration-specific properties
 
@@ -119,7 +118,7 @@ Sub main()
                         Dim vConfigs As Variant
                         vConfigs = swModel.GetConfigurationNames
                         For i = 0 To UBound(vConfigs)
-                            'Debug.Print "config " & i & " = " & vConfigs(i)
+                            Debug.Print "config " & i & " = " & vConfigs(i)
                             If Not configExists And strConfig = vConfigs(i) Then
                                 configExists = True
                             End If
