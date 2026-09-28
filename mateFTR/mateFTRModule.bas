@@ -56,6 +56,12 @@ Sub main()
     Dim assyPlane As Object
     Dim compPlane As Object
     For Each swComp In comps
+        ' A fixed component would be over-defined by the mates, so float it first
+        If swComp.IsFixed Then
+            swAssy.ClearSelection2 True
+            boolstatus = swComp.Select4(False, Nothing, False)
+            swAssy.UnfixComponent
+        End If
         For i = 0 To 2
             Set assyPlane = findFeature(swAssy.FirstFeature, planeNames(i))
             Set compPlane = findFeature(swComp.FirstFeature, planeNames(i))

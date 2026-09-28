@@ -3,6 +3,9 @@ I suggest adding this repository to your [Macro File Locations](https://help.sol
 
 As SWP is a binary format, the macros are exported as BAS files for clarity.
 
+Toolbar button images for [macro buttons](https://help.solidworks.com/2022/english/Solidworks/sldworks/t_assigning_macro_toolbar_button.htm) must be 16x16 pixel BMP files with at most 256 colors and a white background ([ref](https://www.javelin-tech.com/blog/2020/10/creating-macro-buttons-in-solidworks/)); export3mfStep.bmp is a 16-color example.
+Stock images are in the SOLIDWORKS install directory under `data\user macro icons`.
+
 ## addAxesXYZ
 Adds canonical X,Y,Z axes to the open part/assembly.
 This can also be done in the part/assembly template.
@@ -27,6 +30,7 @@ Exports the current parts properties to partName.csv in the same format as impor
 ## MateFTR
 In an assembly, mates the Front, Top, and Right planes of each component selected in the feature tree to the assembly's Front, Top, and Right planes.
 Planes are only mated by name (Front-Front, Top-Top, Right-Right); a component missing one of these planes is skipped for that plane.
+Fixed components are floated before mating.
 
 ## Copyright
 Copyright (c) 2023 Mechanomy LLC
