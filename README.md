@@ -24,6 +24,10 @@ specialConfig; configText; text;  specialest config;
 ## exportPartProperties
 Exports the current parts properties to partName.csv in the same format as importProperties2Part.
 
+## MateFTR
+In an assembly, mates the Front, Top, and Right planes of the component selected in the feature tree to the assembly's Front, Top, and Right planes.
+The first three planes of each are used, so renamed planes still work.
+
 ## Copyright
 Copyright (c) 2023 Mechanomy LLC
 
