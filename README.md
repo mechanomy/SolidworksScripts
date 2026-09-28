@@ -25,8 +25,8 @@ specialConfig; configText; text;  specialest config;
 Exports the current parts properties to partName.csv in the same format as importProperties2Part.
 
 ## MateFTR
-In an assembly, mates the Front, Top, and Right planes of the component selected in the feature tree to the assembly's Front, Top, and Right planes.
-The first three planes of each are used, so renamed planes still work.
+In an assembly, mates the Front, Top, and Right planes of each component selected in the feature tree to the assembly's Front, Top, and Right planes.
+Planes are only mated by name (Front-Front, Top-Top, Right-Right); a component missing one of these planes is skipped for that plane.
 
 ## Copyright
 Copyright (c) 2023 Mechanomy LLC

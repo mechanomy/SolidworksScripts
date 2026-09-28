@@ -1,6 +1,6 @@
 Attribute VB_Name = "MateFTRModule"
-'Mates the Front, Top, and Right planes of the selected component to the Front, Top, and Right planes of the active assembly
-' Select the component in the feature tree, then run the macro
+'Mates the Front, Top, and Right planes of each selected component to the Front, Top, and Right planes of the active assembly
+' Select one or more components in the feature tree, then run the macro
 ' Uses AddMate5 https://help.solidworks.com/2022/english/api/sldworksapi/SolidWorks.Interop.sldworks~SolidWorks.Interop.sldworks.IAssemblyDoc~AddMate5.html
 
 'MIT License
@@ -12,6 +12,7 @@ Attribute VB_Name = "MateFTRModule"
 Dim swApp As Object
 
 Dim swAssy As Object
+Dim swSelMgr As Object
 Dim swComp As Object
 Dim swMate As Object
 Dim boolstatus As Boolean
@@ -28,46 +29,62 @@ Sub main()
         Exit Sub
     End If
 
-    ' Get the component that owns the current selection
-    Set swComp = swAssy.SelectionManager.GetSelectedObjectsComponent4(1, -1)
-    If swComp Is Nothing Then
-        MsgBox "Select a component in the feature tree, then run MateFTR."
+    ' Collect the selected components before mating clears the selection
+    Set swSelMgr = swAssy.SelectionManager
+    Dim comps As New Collection
+    Dim i As Integer
+    Dim j As Integer
+    Dim isNew As Boolean
+    For i = 1 To swSelMgr.GetSelectedObjectCount2(-1)
+        Set swComp = swSelMgr.GetSelectedObjectsComponent4(i, -1)
+        If Not swComp Is Nothing Then
+            isNew = True
+            For j = 1 To comps.Count
+                If comps(j) Is swComp Then isNew = False
+            Next j
+            If isNew Then comps.Add swComp
+        End If
+    Next i
+    If comps.Count = 0 Then
+        MsgBox "Select one or more components in the feature tree, then run MateFTR."
         Exit Sub
     End If
 
-    ' The first three planes in any part or assembly are Front, Top, Right, even if renamed
-    Dim assyPlanes As Variant
-    Dim compPlanes As Variant
-    assyPlanes = firstThreePlanes(swAssy.FirstFeature)
-    compPlanes = firstThreePlanes(swComp.FirstFeature)
-
-    Dim i As Integer
-    For i = 0 To 2
-        swAssy.ClearSelection2 True
-        boolstatus = compPlanes(i).Select2(False, 1)
-        boolstatus = assyPlanes(i).Select2(True, 1)
-        Set swMate = swAssy.AddMate5(swMateType_e.swMateCOINCIDENT, swMateAlign_e.swMateAlignALIGNED, False, 0, 0, 0, 0, 0, 0, 0, 0, False, False, 0, longstatus)
-        If swMate Is Nothing Then
-            MsgBox "Failed to mate " & compPlanes(i).Name & " to " & assyPlanes(i).Name & ", error " & longstatus
-        End If
-    Next i
+    ' Mate each plane only to the plane of the same name
+    Dim planeNames As Variant
+    planeNames = Array("Front Plane", "Top Plane", "Right Plane")
+    Dim assyPlane As Object
+    Dim compPlane As Object
+    For Each swComp In comps
+        For i = 0 To 2
+            Set assyPlane = findFeature(swAssy.FirstFeature, planeNames(i))
+            Set compPlane = findFeature(swComp.FirstFeature, planeNames(i))
+            If assyPlane Is Nothing Or compPlane Is Nothing Then
+                MsgBox "Skipping " & planeNames(i) & " on " & swComp.Name2 & ", plane not found in the component or assembly."
+            Else
+                swAssy.ClearSelection2 True
+                boolstatus = compPlane.Select2(False, 1)
+                boolstatus = assyPlane.Select2(True, 1)
+                Set swMate = swAssy.AddMate5(swMateType_e.swMateCOINCIDENT, swMateAlign_e.swMateAlignALIGNED, False, 0, 0, 0, 0, 0, 0, 0, 0, False, False, 0, longstatus)
+                If swMate Is Nothing Then
+                    MsgBox "Failed to mate " & planeNames(i) & " on " & swComp.Name2 & ", error " & longstatus
+                End If
+            End If
+        Next i
+    Next swComp
 
     swAssy.ClearSelection2 True
     swAssy.EditRebuild3
 
 End Sub
 
-' Returns the first three reference planes found by walking the feature tree from swFeat
-Function firstThreePlanes(ByVal swFeat As Object) As Variant
-    Dim planes(2) As Object
-    Dim n As Integer
-    n = 0
-    Do While Not swFeat Is Nothing And n < 3
-        If swFeat.GetTypeName2 = "RefPlane" Then
-            Set planes(n) = swFeat
-            n = n + 1
+' Returns the feature named featName found by walking the feature tree from swFeat, or Nothing
+Function findFeature(ByVal swFeat As Object, featName As Variant) As Object
+    Do While Not swFeat Is Nothing
+        If swFeat.Name = featName Then
+            Set findFeature = swFeat
+            Exit Function
         End If
         Set swFeat = swFeat.GetNextFeature
     Loop
-    firstThreePlanes = planes
 End Function
