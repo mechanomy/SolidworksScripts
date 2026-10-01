@@ -1,5 +1,5 @@
 Attribute VB_Name = "importProperties2PartModule"
-'This macro imports custom properties from a CSV file into the active part
+'This macro imports custom properties from a CSV file into the active part or assembly
 
 'MIT License
 'Copyright (c) 2023 Mechanomy
@@ -19,12 +19,20 @@ Sub main()
     
     Set swApp = Application.SldWorks
     Set swModel = swApp.ActiveDoc
+    If swModel Is Nothing Then
+        MsgBox "Open a part or assembly first, exiting", vbExclamation, "ImportProperties"
+        Exit Sub
+    End If
     Debug.Print "File = " + swModel.GetPathName 'Debug.Prints appear in the VBA Immediate window
     
     Dim modelType As Integer
     Dim pathModel As String
     Dim pathCsv As String
     modelType = swModel.GetType
+    If modelType <> swDocumentTypes_e.swDocPART And modelType <> swDocumentTypes_e.swDocASSEMBLY Then
+        MsgBox "The active document must be a part or assembly, exiting", vbExclamation, "ImportProperties"
+        Exit Sub
+    End If
     pathModel = swModel.GetPathName
     If Len(pathModel) > 0 Then
         pathCsv = Left(pathModel, InStrRev(pathModel, ".") - 1) + ".csv" ' Strip the extension
@@ -46,7 +54,7 @@ Sub main()
     pathCsv = swApp.GetOpenFileName("Select properties file to import", ".", Filter, fileOptions, fileConfig, fileDispName)
     Debug.Print pathCsv
     
-    If modelType = swDocumentTypes_e.swDocPART And Len(pathCsv) > 0 Then
+    If Len(pathCsv) > 0 Then
         'Open the CSV for import
         Dim fso As Object 'apparently this is the old, incorrect way...but it works  https://stackoverflow.com/questions/11503174/how-to-create-and-write-to-a-txt-file-using-vba
         Set fso = CreateObject("Scripting.FileSystemObject")
@@ -163,7 +171,7 @@ Sub main()
         MsgBox "importProperties finished " & vbCrLf & vbCrLf & "Thank you for using Mechanomy", vbInformation, "ImportProperties" ' https://learn.microsoft.com/en-us/office/vba/language/reference/user-interface-help/msgbox-function
     Else
         MsgBox "No file selected, exiting", vbExclamation, "ImportProperties"
-    End If 'modelType=part
+    End If 'pathCsv selected
     
     Set fso = Nothing
     Set fCsv = Nothing
