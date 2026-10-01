@@ -14,7 +14,7 @@ This can also be done in the part/assembly template.
 Saves the current part in 3MF and STEP files.
 
 ## importProperties2Part
-Imports properties in a CSV file into the current part, as either 'Custom File Properties' or 'Configuration Properties'.
+Imports properties in a CSV file into the current part or assembly, as either 'Custom File Properties' or 'Configuration Properties'.
 The CSV format is:
 ```csv
 Optional reference path to file.csv or other comment; this first line is skipped when importing
@@ -26,6 +26,9 @@ specialConfig; configText; text;  specialest config;
 
 ## exportPartProperties
 Exports the current parts properties to partName.csv in the same format as importProperties2Part.
+
+## savePNG
+Saves an isometric, zoom-to-fit PNG of the current part next to the part file, with the same name. The previous view is restored afterwards.
 
 ## MateFTR
 In an assembly, mates the Front, Top, and Right planes of each component selected in the feature tree to the assembly's Front, Top, and Right planes.

@@ -21,6 +21,8 @@ Dim fname As String
 Dim cnt As Integer
 Dim Body_Vis_States() As Boolean
 Dim bodyArray As Variant
+Dim nBodies As Integer
+Dim bodyName As String
 
 Sub main()
 
@@ -41,13 +43,22 @@ Sub main()
     ' Uncomment this line for STL files to use same file name as the part file
     fname = Left(swPart.GetTitle, InStrRev(swPart.GetTitle, ".") - 1) & "_" & configName
 
+    ' Append the file's Revision property, if it has one
+    Dim revision As String
+    revision = getFileProperty(swPart, "Revision")
+    If revision <> "" Then fname = fname & "_r" & revision
+    ' weldment configurations are named like "Default<As Welded>", which are illegal in Windows filenames
+    fname = sanitizeFileName(fname)
+
     ' creates an array of all the bodies in the current part
     bodyArray = swPart.GetBodies2(-1, False)
 
     ' Get current visibility state of all bodies, put into an array
+    nBodies = 0
     For cnt = 0 To UBound(bodyArray)
         Set swBody = bodyArray(cnt)
         If Not swBody Is Nothing Then
+            nBodies = nBodies + 1
             ReDim Preserve Body_Vis_States(0 To cnt)
             Body_Vis_States(cnt) = swBody.Visible
             ' MsgBox ("Body " & cnt & " Visibility: " & Body_Vis_States(cnt))
@@ -69,10 +80,16 @@ Sub main()
         If Not swBody Is Nothing Then
             swBody.HideBody (False)
 
-            longstatus = swPart.SaveAs3(path & "\" & fname & "_v" & cnt & ".3mf", 0, 2) 'save options enum https://help.solidworks.com/2022/english/api/swconst/SOLIDWORKS.Interop.swconst~SOLIDWORKS.Interop.swconst.swSaveAsOptions_e.html
+            ' Only number the bodies when there is more than one
+            bodyName = fname
+            If nBodies > 1 Then bodyName = fname & "_b" & cnt
+
+            longstatus = swPart.SaveAs3(path & "\" & bodyName & ".3mf", 0, 2) 'save options enum https://help.solidworks.com/2022/english/api/swconst/SOLIDWORKS.Interop.swconst~SOLIDWORKS.Interop.swconst.swSaveAsOptions_e.html
+            If longstatus <> 0 Then MsgBox ("Failed to save " & bodyName & ".3mf, error " & longstatus)
             ' MsgBox ("Body " & cnt & " Saved to 3mf")
             
-            longstatus = swPart.SaveAs3(path & "\" & fname & "_v" & cnt & ".step", 0, 2) 'save as step for future
+            longstatus = swPart.SaveAs3(path & "\" & bodyName & ".step", 0, 2) 'save as step for future
+            If longstatus <> 0 Then MsgBox ("Failed to save " & bodyName & ".step, error " & longstatus)
             ' MsgBox ("Body " & cnt & " Saved to STEP")
 
             swBody.HideBody (True)
@@ -91,3 +108,22 @@ Sub main()
     ' Shell "explorer.exe " & path & "\", vbNormalFocus
 
 End Sub
+
+' Replaces characters that are not allowed in Windows filenames
+Function sanitizeFileName(ByVal fileName As String) As String
+  Dim badChars As Variant
+  Dim i As Integer
+  badChars = Array("<", ">", ":", """", "/", "\", "|", "?", "*")
+  For i = 0 To UBound(badChars)
+    fileName = Replace(fileName, badChars(i), "_")
+  Next i
+  sanitizeFileName = fileName
+End Function
+
+' Returns the resolved value of a file-level custom property, or "" if it does not exist
+Function getFileProperty(ByVal swModel As Object, ByVal propName As String) As String
+  Dim valOut As String
+  Dim resolvedValOut As String
+  swModel.Extension.CustomPropertyManager("").Get4 propName, False, valOut, resolvedValOut 'https://help.solidworks.com/2022/english/api/sldworksapi/SOLIDWORKS.Interop.sldworks~SOLIDWORKS.Interop.sldworks.ICustomPropertyManager~Get4.html
+  getFileProperty = resolvedValOut
+End Function
