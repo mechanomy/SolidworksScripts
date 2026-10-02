@@ -28,7 +28,20 @@ specialConfig; configText; text;  specialest config;
 ```
 
 ## exportPartProperties
-Exports the current parts properties to partName.csv in the same format as importProperties2Part.
+Exports the current parts properties to partName.csv in the same format as importProperties.
+
+## exportDimensions
+Exports every dimension in the current part or assembly to partName.csv in the same format as importProperties.
+Each dimension is named `Part_Sketch_Name` (eg `bracket_Sketch1_D1`), typed `double`, and valued in document units.
+The first line gives the model's length unit and the macro that wrote the file:
+```csv
+In [mm] Properties written by C:\SolidworksScripts\exportDimensions\exportDimensions.swp
+Default; bracket_Sketch1_D1; double; 25;
+Default; bracket_Boss-Extrude1_D1; double; 10;
+```
+The current model is exported in all of its configurations.
+In an assembly, each component's dimensions are exported once, in the configuration the assembly uses, so the first column holds the component's configuration name.
+Lightweight and suppressed components are skipped; resolve them to include their dimensions.
 
 ## saveIsometricPng
 Saves an isometric, zoom-to-fit PNG of the current part next to the part file, with the same name. The previous view is restored afterwards.
